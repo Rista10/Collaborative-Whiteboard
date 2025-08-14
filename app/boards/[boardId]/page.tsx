@@ -1,3 +1,4 @@
+import { Room } from "@/components/room";
 import { Canvas } from "./_components/canvas";
 
 interface BoardPageProps {
@@ -8,6 +9,8 @@ interface BoardPageProps {
 
 export default function BoardPage({ params }: BoardPageProps) {
     return(
-        <Canvas boardId={params.boardId} />
+        <Room roomId={params.boardId} fallback={<div>Loading...</div>}>
+          {/* <Canvas /> */}
+        </Room>
     )
 }
