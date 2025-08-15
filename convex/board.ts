@@ -39,29 +39,14 @@ export const getBoardList = query({
     }
 })
 
-export const editBoard = mutation({
-  args: {
-    boardId: v.string(),
-    title: v.string(),
-  },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-
-    if (!identity) {
-      throw new Error("Unauthorized");
+export const get = query({
+  args:{id: v.id("boards")},
+  handler:async (ctx,args)=>{
+    const board = await ctx.db.get(args.id)
+    if(!board){
+      throw new Error("Board not found")
     }
-
-    const boardId = ctx.db.normalizeId("boards", args.boardId);
-    if (!boardId) {
-      throw new Error("Invalid boardId");
-    }
-    const board = await ctx.db.patch(boardId, {
-      title: args.title,
-      authorId: identity.subject,
-      authorName: identity.name || "Anonymous",
-    });
-
-    return board;
+    return board
   }
-});
+})
 

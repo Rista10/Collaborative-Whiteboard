@@ -19,7 +19,8 @@ declare global {
       id: string;
       info: {
         // Example properties, for useSelf, useUser, useOthers, etc.
-        // name: string;
+        name: string;
+        imageUrl?: string; // Optional, can be undefined
         // avatar: string;
       };
     };

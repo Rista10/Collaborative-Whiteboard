@@ -5,16 +5,7 @@ import {
   RoomProvider,
   ClientSideSuspense,
 } from "@liveblocks/react/suspense";
-import { LiveList, LiveMap, LiveObject } from "@liveblocks/client";
 import React from "react";
-
-import type { LsonObject } from "@liveblocks/client";
-
-interface Layer extends LsonObject {
-  id: string;
-  type: string;
-  data?: any;
-}
 
 interface RoomProps {
   children?: React.ReactNode;
@@ -24,18 +15,15 @@ interface RoomProps {
 
 export const Room = ({children,roomId,fallback}:RoomProps)=>{
     return (
+        <LiveblocksProvider
+           authEndpoint="/api/liveblocks-auth">
         <RoomProvider
-        id={roomId || "default-room"}
-        initialPresence={{ user: null }}
-        initialStorage={{
-          layers: new LiveMap<string, LiveObject<Layer>>(),
-          layerIds: new LiveList<string>([]),
-        }}
-        >
+        id={roomId || "default-room"}>
             <ClientSideSuspense fallback={fallback}>
                 {()=> children}
                 </ClientSideSuspense>
         </RoomProvider>
+        </LiveblocksProvider>
     )
 
 }

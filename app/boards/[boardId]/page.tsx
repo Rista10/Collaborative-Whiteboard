@@ -10,7 +10,7 @@ interface BoardPageProps {
 export default function BoardPage({ params }: BoardPageProps) {
     return(
         <Room roomId={params.boardId} fallback={<div>Loading...</div>}>
-          {/* <Canvas /> */}
+          <Canvas boardId={params.boardId} />
         </Room>
     )
 }
