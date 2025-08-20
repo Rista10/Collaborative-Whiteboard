@@ -56,7 +56,8 @@ export enum CanvasMode {
     Pressing,
     SelectionNet,
     Inserting,
-    Pencil
+    Pencil,
+    Resizing
 }
 
 export type CanvasState =
@@ -76,6 +77,9 @@ export type CanvasState =
         mode: CanvasMode.Inserting;
         layer:LayerType.Circle | LayerType.Rectangle 
     }
-    | { mode: CanvasMode.Pencil };
+    | { mode: CanvasMode.Pencil }
+    |{
+        mode: CanvasMode.Resizing
+    };
 
 export type Layer = RectangleLayer | CircleLayer | PathLayer;

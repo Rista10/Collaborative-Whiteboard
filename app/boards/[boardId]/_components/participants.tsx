@@ -13,7 +13,7 @@ export const Participants = () => {
             <div className="flex gap-x-2"> 
                 {currentUsers && (
                     <>
-                        <span className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold border-2 border-white">
+                        <span className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold border-2 border-white">
                             {currentUsers.info?.name?.[0] || "U"}
                         </span>
                         {otherUsers.slice(0, MAX_VISIBLE_USER).map((user) => (

@@ -13,7 +13,7 @@ export const NewButton = () => {
         <Dialog>
             <DialogTrigger asChild>
                 <div className="aspect-square">
-                    <button className="w-full h-full flex items-center justify-center bg-white/25 p-3rounded-md opacity-50">
+                    <button className=" h-12 flex items-center justify-center bg-white/25 w-12 m-2 opacity-50">
                         <Plus className="text-white" />
                     </button>
                 </div>

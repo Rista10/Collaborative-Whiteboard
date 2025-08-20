@@ -29,8 +29,8 @@ export const Item = ({ id, name, imageUrl }: ItemProps) => {
                 <Image
                     src={imageUrl}
                     alt={`${name} logo`}
-                    width={30}
-                    height={30}
+                    width={35}
+                    height={35}
                     className={cn(
                 "cursor-pointer m-4 ",
                 isActive ? "bg-blue-500 text-white opacity-100" : "bg-gray-200 text-black opacity-60"

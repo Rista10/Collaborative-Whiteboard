@@ -1,121 +1,57 @@
 "use client";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { CanvasState, CanvasMode, LayerType, Point, Color } from "@/types/canvas";
 import { Participants } from "./participants";
 import { ToolBar } from "./toolbar";
-import { useCanRedo, useCanUndo, useHistory, useMutation, useOthersMapped } from "@liveblocks/react/suspense";
+import { useCanRedo, useCanUndo, useHistory, useMutation, useOthersMapped, useSelf } from "@liveblocks/react/suspense";
 import { useStorage } from "@liveblocks/react/suspense";
 import { LayerPreview } from "./layerPreview";
-import { connectionIdToColor } from "@/lib/utils";
+import { connectionIdToColor, colorToCss } from "@/lib/utils";
 import { LiveObject } from "@liveblocks/client";
 import { nanoid } from "nanoid";
 
-export const Canvas = ({ boardId }: { boardId: string }) => {
+export const Canvas = () => {
   const layerIds = useStorage((root) => root.layerIds);
-  const [canvasState, setCanvasState] = useState<CanvasState>({
-    mode: CanvasMode.None
-  });
-  const [lastUsedColor, setLastUsedColor] = useState<Color>({
-    r: 255,
-    g: 0,
-    b: 0,
-  });
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const [canvasState, setCanvasState] = useState<CanvasState>({ mode: CanvasMode.None });
+  const [lastUsedColor] = useState<Color>({ r: 255, g: 0, b: 0 });
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [currentStroke, setCurrentStroke] = useState<Point[]>([]);
 
   const selections = useOthersMapped((other) => other.presence.selection);
+  const selfSelection = useSelf((me) => me.presence.selection) || [];
 
   const layerIdsToColorSelection = useMemo(() => {
-    const layerIdsToColorSelection: Record<string, string> = {};
-
-    for (const user of selections) {
-      const [connectionId, selection] = user;
-
+    const mapping: Record<string, string> = {};
+    for (const [connectionId, selection] of selections) {
       for (const layerId of selection) {
-        layerIdsToColorSelection[layerId] = connectionIdToColor(connectionId);
+        mapping[layerId] = connectionIdToColor(connectionId);
       }
     }
-
-    return layerIdsToColorSelection;
-  }, [selections]);
+    for (const layerId of selfSelection) {
+      mapping[layerId] = "blue";
+    }
+    return mapping;
+  }, [selections, selfSelection]);
 
   const history = useHistory();
   const canUndo = useCanUndo();
   const canRedo = useCanRedo();
-  
+
   const clearCanvas = useMutation(({ storage }) => {
     const layers = storage.get("layers");
-    if (layers) {
-      for (const key of layers.keys()) {
-        layers.delete(key);
-      }
-    }
     const layerIds = storage.get("layerIds");
-    if (layerIds) {
-      layerIds.clear();
-    }
+    if (layers) Array.from(layers.keys()).forEach((key) => layers.delete(key));
+    layerIds?.clear?.();
   }, []);
 
   const pointerEventToCanvasPoint = useCallback((e: React.PointerEvent) => {
     const rect = (e.target as HTMLElement).getBoundingClientRect();
-    return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    };
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   }, []);
 
-  const handlePointerMove = useMutation(
-    ({ setMyPresence }, e: React.PointerEvent) => {
-      e.preventDefault();
-      const current = pointerEventToCanvasPoint(e);
-      setMyPresence({ cursor: current });
-
-      if (canvasState.mode === CanvasMode.Pressing && canvasState.origin) {
-        setCanvasState({
-          mode: CanvasMode.SelectionNet,
-          origin: canvasState.origin,
-          current,
-        });
-      }
-    },
-    [pointerEventToCanvasPoint, canvasState]
-  );
-
-  const handlePointerLeave = useMutation(({ setMyPresence }) => {
-    setMyPresence({ cursor: null });
-  }, []);
-
-    const handlePointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      const point = pointerEventToCanvasPoint(e);
-
-      if (canvasState.mode === CanvasMode.Inserting) return;
-
-      if (canvasState.mode === CanvasMode.Pencil) {
-        // handle pencil
-        return;
-      }
-
-      setCanvasState({
-        origin: point,
-        mode: CanvasMode.Pressing,
-      });
-    },
-    [ canvasState.mode, setCanvasState]
-  );
-
- const insertLayer = useMutation(
-  (
-    { storage, setMyPresence },
-    layerType: LayerType.Circle | LayerType.Rectangle,
-    position: Point
-  ) => {
+    const insertLayer = useMutation(({ storage, setMyPresence }, layerType: LayerType.Circle | LayerType.Rectangle, position: Point) => {
     const liveLayers = storage.get("layers");
     const liveLayerIds = storage.get("layerIds");
-    
-    // Generate ID only on client side
     const layerId = nanoid();
 
     const layer = new LiveObject({
@@ -127,101 +63,100 @@ export const Canvas = ({ boardId }: { boardId: string }) => {
       fill: lastUsedColor,
     });
 
-    // Push layerId first, then set layer
     liveLayerIds.push(layerId);
     liveLayers.set(layerId, layer);
-
     setMyPresence({ selection: [layerId] }, { addToHistory: true });
-    setCanvasState({
-      mode: CanvasMode.None,
-    });
-  },
-  [lastUsedColor]
-);
-const handlePointerUp = useMutation(
-    ({}, e) => {
-      const point = pointerEventToCanvasPoint(e);
+    setCanvasState({ mode: CanvasMode.None });
+  }, [lastUsedColor]);
 
-      if (
-        canvasState.mode === CanvasMode.None ||
-        canvasState.mode === CanvasMode.Pressing
-      ) {
-        // unselectLayer();
-        setCanvasState({
-          mode: CanvasMode.None,
-        });
-      } else if (canvasState.mode === CanvasMode.Pencil) {
-        // insertPath();
-      } else if (canvasState.mode === CanvasMode.Inserting) {
-        insertLayer(canvasState.layer, point);
-      } else {
-        setCanvasState({
-          mode: CanvasMode.None,
-        });
-      }
-      history.resume();
-    },
-    [
-      canvasState,
-      history,
-      insertLayer,
-      setCanvasState,
-    ]
-  );
+  const insertPath = useMutation(({ storage }) => {
+    const layerIds = storage.get("layerIds");
+    // implement insert path logic
+  }, [currentStroke, lastUsedColor]);
 
+  const startMultiSelection = useCallback((current: Point, origin: Point) => {
+    if (Math.abs(current.x - origin.x) + Math.abs(current.y - origin.y) > 5) {
+      setCanvasState({ mode: CanvasMode.SelectionNet, origin, current });
+    }
+  }, []);
 
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    const point = pointerEventToCanvasPoint(e);
 
-  const handleLayerPointerDown = useMutation(
-    ({ self, setMyPresence }, e: React.PointerEvent, layerId: string) => {
-      if (
-        canvasState.mode === CanvasMode.Pencil ||
-        canvasState.mode === CanvasMode.Inserting
-      ) {
-        return;
-      }
-
-      history.pause();
-      e.stopPropagation();
-
-      if (!self.presence.selection?.includes(layerId)) {
-        setMyPresence({ selection: [layerId] }, { addToHistory: true });
-      }
-    },
-    [history, canvasState.mode]
-  );
-
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      switch (e.key) {
-        case "z": {
-          if (e.ctrlKey || e.metaKey) {
-            if (e.shiftKey) {
-              history.redo();
-            } else {
-              history.undo();
-            }
-            break;
-          }
-        }
-      }
+    if (canvasState.mode === CanvasMode.Pencil) {
+      setCurrentStroke([point]);
+      setIsDrawing(true);
+      return;
     }
 
-    document.addEventListener("keydown", onKeyDown);
+    if (![CanvasMode.Inserting, CanvasMode.Pencil].includes(canvasState.mode)) {
+      setCanvasState({ origin: point, mode: CanvasMode.Pressing });
+    }
+  }, [canvasState.mode]);
 
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [history]);
+  const handlePointerMove = useMutation(({ setMyPresence }, e: React.PointerEvent) => {
+    e.preventDefault();
+    const point = pointerEventToCanvasPoint(e);
+    setMyPresence({ cursor: point });
 
-  // Don't render until mounted to avoid hydration mismatch
-  if (!mounted) {
-    return null;
+    if (canvasState.mode === CanvasMode.Pressing) {
+      startMultiSelection(point, canvasState.origin);
+    }
+
+    if (canvasState.mode === CanvasMode.Pencil && isDrawing) {
+      setCurrentStroke((prev) => [...prev, point]);
+    }
+  }, [canvasState, isDrawing]);
+
+  const handlePointerLeave = useMutation(({ setMyPresence }) => {
+    if (canvasState.mode === CanvasMode.Pencil && isDrawing && currentStroke.length > 1) {
+    insertPath();
   }
+  
+  if (canvasState.mode === CanvasMode.Pencil) {
+    setIsDrawing(false);
+    setCurrentStroke([]);
+  }
+}, [canvasState.mode, isDrawing, currentStroke, insertPath]);
+
+  const handlePointerUp = useMutation(({ }, e: React.PointerEvent) => {
+    const point = pointerEventToCanvasPoint(e);
+
+    if (canvasState.mode === CanvasMode.Inserting) {
+      insertLayer(canvasState.layer, point);
+    } else if (canvasState.mode === CanvasMode.Pencil) {
+      insertPath();
+    }
+
+    setCanvasState({ mode: CanvasMode.None });
+    history.resume();
+  }, [canvasState, insertLayer, insertPath]);
+
+  const handleLayerPointerDown = useMutation(({ self, setMyPresence }, e: React.PointerEvent, layerId: string) => {
+    if ([CanvasMode.Pencil, CanvasMode.Inserting].includes(canvasState.mode)) return;
+
+    history.pause();
+    e.stopPropagation();
+    if (!self.presence.selection?.includes(layerId)) {
+      setMyPresence({ selection: [layerId] }, { addToHistory: true });
+    }
+  }, [history, canvasState.mode]);
+
+  // --- Keyboard undo/redo ---
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+        e.shiftKey ? history.redo() : history.undo();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [history]);
 
   return (
     <div className="h-full w-full relative bg-neutral-100 touch-none">
       <Participants />
-      <ToolBar  
+      <ToolBar
         canvasState={canvasState}
         setCanvasState={setCanvasState}
         undo={history.undo}
@@ -246,8 +181,27 @@ const handlePointerUp = useMutation(
               selectionColor={layerIdsToColorSelection[layerId]}
             />
           ))}
-          
-          
+
+          {/* Selection net */}
+          {canvasState.mode === CanvasMode.SelectionNet && canvasState.current && (
+            <rect
+              className="fill-blue-500/5 stroke-blue-500 stroke-1 pointer-events-none"
+              x={Math.min(canvasState.origin.x, canvasState.current.x)}
+              y={Math.min(canvasState.origin.y, canvasState.current.y)}
+              width={Math.abs(canvasState.origin.x - canvasState.current.x)}
+              height={Math.abs(canvasState.origin.y - canvasState.current.y)}
+            />
+          )}
+
+          {/* Temporary Pencil stroke */}
+          {canvasState.mode === CanvasMode.Pencil && isDrawing && currentStroke.length > 1 && (
+            <polyline
+              points={currentStroke.map(p => `${p.x},${p.y}`).join(" ")}
+              fill="none"
+              stroke={colorToCss(lastUsedColor)}
+              strokeWidth={2}
+            />
+          )}
         </g>
       </svg>
     </div>

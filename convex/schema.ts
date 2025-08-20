@@ -7,6 +7,6 @@ export default defineSchema({
     orgId: v.string(),
     authorId: v.string(),
     authorName: v.string(),
-    // imageUrl: v.string(),
+    imageUrl: v.optional(v.string())
   }).index("byOrg", ["orgId"]),
 });
