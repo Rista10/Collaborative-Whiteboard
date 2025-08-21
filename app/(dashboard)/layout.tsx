@@ -6,21 +6,20 @@ interface DashboardLayoutProps {
 };
 
 const DashboardLayout = ({
-    children,
-    }: DashboardLayoutProps) => {
-    return (
-        <main className="h-full">
-            <Sidebar/>
-        <div className="pl-[60px]">
-          <div className="flex gap-x-3 h-full">
-  
-            <div className="flex-1 h-full">
-                <Navbar/>
-                {children}</div>
-          </div>
+  children,
+}: DashboardLayoutProps) => {
+  return (
+    <main className="h-full">
+      <Sidebar />
+      <div className="pl-[60px]">
+        <div className="flex gap-x-3 h-full">
+          <div className="flex-1 h-full">
+            <Navbar />
+            {children}</div>
         </div>
-        </main>
-    );
+      </div>
+    </main>
+  );
 }
 
 

@@ -39,7 +39,7 @@ export type PathLayer = {
     points: number[][];
 }
 
-export type Point ={
+export type Point = {
     x: number;
     y: number;
 }
@@ -52,34 +52,41 @@ export type XYWH = {
 }
 
 export enum CanvasMode {
-    None, 
+    None,
     Pressing,
     SelectionNet,
     Inserting,
     Pencil,
-    Resizing
+    Resizing,
+    Translating
 }
 
 export type CanvasState =
-    | { 
-        mode: CanvasMode.None 
+    | {
+        mode: CanvasMode.None
     }
-    | { 
+    | {
         mode: CanvasMode.Pressing;
         origin: Point;
-     }
-    | { 
+    }
+    | {
         mode: CanvasMode.SelectionNet;
         origin: Point;
         current?: Point;
     }
-    | { 
+    | {
         mode: CanvasMode.Inserting;
-        layer:LayerType.Circle | LayerType.Rectangle 
+        layer: LayerType.Circle | LayerType.Rectangle
     }
-    | { mode: CanvasMode.Pencil }
-    |{
+    | { 
+        mode: CanvasMode.Pencil 
+    }
+    | {
         mode: CanvasMode.Resizing
-    };
+    }
+    |{
+        mode: CanvasMode.Translating
+        current: Point;
+    }
 
 export type Layer = RectangleLayer | CircleLayer | PathLayer;

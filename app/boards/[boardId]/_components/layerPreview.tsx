@@ -8,7 +8,7 @@ interface LayerPreviewProps {
     id: string;
     onLayerPointerDown: (e: React.PointerEvent, layerId: string) => void;
     selectionColor: string;
-}
+        }
 
 export const LayerPreview = ({
     id,
@@ -47,5 +47,20 @@ export const LayerPreview = ({
                     strokeWidth={1}
                 />
             )
-    }
-};
+        case LayerType.Path:
+    return (
+        <path
+            onPointerDown={(e) => onLayerPointerDown(e, id)}
+            d={layer.points ? layer.points.map((point, index) =>
+                index === 0 ? `M ${point[0]} ${point[1]}` : `L ${point[0]} ${point[1]}`
+            ).join(' ') : ""}
+            fill="none"
+            stroke={fill ? colorToCss(fill) : "#000"}
+            strokeWidth={2}
+            style={{
+                transform: `translate(${layer.x}px, ${layer.y}px)`,
+            }}
+        />
+    );
+}
+}

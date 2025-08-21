@@ -33,7 +33,7 @@ export const Navbar = () => {
         />
       </div>
 
-      <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+      <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
         Collaborative Whiteboard
       </h1>
 
