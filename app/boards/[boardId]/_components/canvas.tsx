@@ -37,11 +37,11 @@ export const Canvas = () => {
   const canUndo = useCanUndo();
   const canRedo = useCanRedo();
 
-  const clearCanvas = useMutation(({ storage }) => {
+ const clearCanvas = useMutation(({ storage }) => {
     const layers = storage.get("layers");
     const layerIds = storage.get("layerIds");
     if (layers) Array.from(layers.keys()).forEach((key) => layers.delete(key));
-    layerIds?.clear?.();
+    if (layerIds) layerIds.clear();
   }, []);
 
   const pointerEventToCanvasPoint = useCallback((e: React.PointerEvent) => {
