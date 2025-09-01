@@ -9,4 +9,3 @@ A real-time collaborative whiteboard application built with Next.js, Cleark, Con
 - **Color picker** - Choose custom colors for drawing
 - **Undo/Redo** - Full history support
 - **Clear canvas** - Reset the entire whiteboard
-

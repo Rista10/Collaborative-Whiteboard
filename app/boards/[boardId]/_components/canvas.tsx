@@ -18,7 +18,9 @@ export const Canvas = () => {
   const pencilDraft = useSelf((self) => self.presence.pencilDraft);
 
   const selections = useOthersMapped((other) => other.presence.selection);
-  const selfSelection = useSelf((me) => me.presence.selection) || [];
+
+  const selection = useSelf((me) => me.presence.selection);
+  const selfSelection = useMemo(() => selection || [], [selection]);
 
   const layerIdsToColorSelection = useMemo(() => {
     const mapping: Record<string, string> = {};
@@ -37,7 +39,7 @@ export const Canvas = () => {
   const canUndo = useCanUndo();
   const canRedo = useCanRedo();
 
- const clearCanvas = useMutation(({ storage }) => {
+  const clearCanvas = useMutation(({ storage }) => {
     const layers = storage.get("layers");
     const layerIds = storage.get("layerIds");
     if (layers) Array.from(layers.keys()).forEach((key) => layers.delete(key));
@@ -208,7 +210,12 @@ export const Canvas = () => {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "z") {
-        e.shiftKey ? history.redo() : history.undo();
+        if (e.shiftKey) {
+          history.redo();
+        } else {
+          history.undo();
+        }
+
       }
     };
     document.addEventListener("keydown", onKeyDown);
@@ -223,11 +230,11 @@ export const Canvas = () => {
         <Participants />
       </div>
       <ColorPicker
-  color={lastUsedColor}
-  onChange={(color: Color) => {
-    setLastUsedColor(color);
-  }}
-/>
+        color={lastUsedColor}
+        onChange={(color: Color) => {
+          setLastUsedColor(color);
+        }}
+      />
 
       <ToolBar
         canvasState={canvasState}
