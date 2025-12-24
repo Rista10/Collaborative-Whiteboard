@@ -6,10 +6,13 @@ import { Navbar } from "./_components/siderbar/navbar";
 
 declare global {
   interface Window {
-    klaviyo: any;
-    _klOnsite: any[];
+    klaviyo: {
+      push: (...args: unknown[]) => void;
+    } | undefined;
+    _klOnsite: unknown[];
   }
 }
+
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
